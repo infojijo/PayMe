@@ -12,7 +12,7 @@ import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.ConsumeResponseListener;
 import com.android.billingclient.api.Purchase;
-import com.android.billingclient.api.Purchase.PurchasesResult;
+import com.android.billingclient.api.PurchaseHistoryResponseListener;
 import com.android.billingclient.api.PurchasesUpdatedListener;
 import com.android.billingclient.api.SkuDetails;
 import com.android.billingclient.api.SkuDetailsParams;
@@ -33,8 +33,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class HomeFragment extends Fragment implements
-        PurchasesUpdatedListener,
-        ProdcutsAdapter.doBilling {
+        ProdcutsAdapter.doBilling, PurchasesUpdatedListener {
 
 
     private HomeViewModel homeViewModel;
@@ -51,6 +50,14 @@ public class HomeFragment extends Fragment implements
                 .setSkuDetails(skuID).build());
 
         Log.d(HomeFragment.class.getSimpleName(), "Billing started");
+
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        clearHistory();
+        Log.d(HomeFragment.class.getSimpleName(), "Screen Resumed");
     }
 
     @Override
@@ -152,9 +159,9 @@ public class HomeFragment extends Fragment implements
             @Override
             public void onBillingSetupFinished(int responseCode) {
                 if (responseCode == BillingClient.BillingResponse.OK) {
-                    Log.d(HomeFragment.class.getSimpleName(), "SUCCESS" + responseCode);
+                    Log.d(HomeFragment.class.getSimpleName(), "Billing Setup Success");
                 } else {
-                    Log.d(HomeFragment.class.getSimpleName(), "FAILURE" + responseCode);
+                    Log.d(HomeFragment.class.getSimpleName(), "Billing Setup FAILURE with ->" + responseCode);
                 }
                 clearHistory();
             }
@@ -165,21 +172,25 @@ public class HomeFragment extends Fragment implements
             }
         });
     }
-
     public void clearHistory() {
-        List<Purchase> purchases =
-                billingClient.queryPurchases(BillingClient.SkuType.INAPP).getPurchasesList();
-        for (int i = 0; i < purchases.size(); i++) {
-            billingClient.consumeAsync(purchases.get(i).getPurchaseToken(), new ConsumeResponseListener() {
-                @Override
-                public void onConsumeResponse(int responseCode, String purchaseToken) {
-                    Log.d(HomeFragment.class.getSimpleName(),
-                            "Purchase Token -> " +
-                                    purchaseToken +
-                                    " -> Consumed");
+        if (billingClient != null) {
+            List<Purchase> purchases =
+                    billingClient.queryPurchases(BillingClient.SkuType.INAPP).getPurchasesList();
+            if (purchases != null) {
+                for (int i = 0; i < purchases.size(); i++) {
+                    billingClient.consumeAsync(purchases.get(i).getPurchaseToken(), new ConsumeResponseListener() {
+                        @Override
+                        public void onConsumeResponse(int responseCode, String purchaseToken) {
+                            Log.d(HomeFragment.class.getSimpleName(),
+                                    "Purchase Token -> " +
+                                            purchaseToken +
+                                            " -> Consumed");
+                        }
+                    });
                 }
-            });
+            }
+        } else {
+            Log.d(HomeFragment.class.getSimpleName(), "Billing Client empty");
         }
-
     }
 }
