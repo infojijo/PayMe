@@ -41,6 +41,7 @@ public class HomeFragment extends Fragment implements
     private List<String> skuIds = new ArrayList<>();
     private RecyclerView recyclerView;
     private ProdcutsAdapter prodcutsAdapter;
+    private List<String> purchasedSKUs = new ArrayList<>();
 
     @Override
     public void startBilling(SkuDetails skuID) {
@@ -56,7 +57,7 @@ public class HomeFragment extends Fragment implements
     @Override
     public void onResume() {
         super.onResume();
-        clearHistory();
+        setupBillingClient();
         Log.d(HomeFragment.class.getSimpleName(), "Screen Resumed");
     }
 
@@ -64,7 +65,7 @@ public class HomeFragment extends Fragment implements
     public void onPurchasesUpdated(int responseCode, @Nullable List<Purchase> purchases) {
 
         Log.d(HomeFragment.class.getSimpleName(), "Purchase Updated");
-        allowMultiplePurchase(purchases);
+        //allowMultiplePurchase(purchases);
     }
 
     private void allowMultiplePurchase(List<Purchase> purchases) {
@@ -83,7 +84,7 @@ public class HomeFragment extends Fragment implements
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
-        setupBillingClient();
+        //setupBillingClient();
         setupSKUs();
         homeViewModel =
                 ViewModelProviders.of(this).get(HomeViewModel.class);
@@ -100,6 +101,13 @@ public class HomeFragment extends Fragment implements
             @Override
             public void onClick(View v) {
                 onLoadProductsClicked();
+            }
+        });
+
+        root.findViewById(R.id.clearPurchase).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearHistory();
             }
         });
 
@@ -139,7 +147,8 @@ public class HomeFragment extends Fragment implements
     }
 
     public void initProductAdapter(List<SkuDetails> skuIds) {
-        prodcutsAdapter = new ProdcutsAdapter(skuIds, this);
+
+        prodcutsAdapter = new ProdcutsAdapter(skuIds, this, getPurchases());
         recyclerView.setAdapter(prodcutsAdapter);
     }
 
@@ -151,7 +160,18 @@ public class HomeFragment extends Fragment implements
                     @Override
                     public void onPurchasesUpdated(int responseCode,
                                                    @Nullable List<Purchase> purchases) {
+                        if (purchases != null) {
+                            if (purchases.size() > 0) {
+                                for (int i = 0; i < purchases.size(); i++) {
+                                    Log.d(HomeFragment.class.getSimpleName(), "Purchased SKUs-> "
+                                            + purchases.get(i).getSku());
 
+                                }
+                            } else {
+
+                                Log.d(HomeFragment.class.getSimpleName(), "No SKUs Purchased");
+                            }
+                        }
                     }
                 }).build();
 
@@ -160,10 +180,11 @@ public class HomeFragment extends Fragment implements
             public void onBillingSetupFinished(int responseCode) {
                 if (responseCode == BillingClient.BillingResponse.OK) {
                     Log.d(HomeFragment.class.getSimpleName(), "Billing Setup Success");
+                    getPurchases();
                 } else {
                     Log.d(HomeFragment.class.getSimpleName(), "Billing Setup FAILURE with ->" + responseCode);
                 }
-                clearHistory();
+                //clearHistory();
             }
 
             @Override
@@ -172,6 +193,7 @@ public class HomeFragment extends Fragment implements
             }
         });
     }
+
     public void clearHistory() {
         if (billingClient != null) {
             List<Purchase> purchases =
@@ -184,13 +206,38 @@ public class HomeFragment extends Fragment implements
                             Log.d(HomeFragment.class.getSimpleName(),
                                     "Purchase Token -> " +
                                             purchaseToken +
-                                            " -> Consumed");
+                                            " -> Consumed in Clear History");
                         }
                     });
                 }
             }
         } else {
-            Log.d(HomeFragment.class.getSimpleName(), "Billing Client empty");
+            Log.d(HomeFragment.class.getSimpleName(), "Billing Client empty in Clear History");
         }
     }
+
+    public List<String> getPurchases() {
+
+        if (billingClient != null) {
+            List<Purchase> purchases =
+                    billingClient.queryPurchases(BillingClient.SkuType.INAPP).getPurchasesList();
+            if (purchases != null) {
+                if (purchases.size() > 0) {
+                    purchasedSKUs = new ArrayList<>();
+                    for (int i = 0; i < purchases.size(); i++) {
+                        Log.d(HomeFragment.class.getSimpleName(),
+                                "Purchase Token from History -> " +
+                                        purchases.get(i).getPurchaseToken());
+                        purchasedSKUs.add(purchases.get(i).getSku());
+                    }
+                } else {
+                    Log.d(HomeFragment.class.getSimpleName(), "No Purchases History till now");
+                }
+            }
+        } else {
+            Log.d(HomeFragment.class.getSimpleName(), "Billing Client empty in Purchase History");
+        }
+        return purchasedSKUs;
+    }
+
 }

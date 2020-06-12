@@ -18,10 +18,12 @@ public class ProdcutsAdapter extends RecyclerView.Adapter<ProdcutsAdapter.Produc
 
     private List<SkuDetails> mProduct;
     private HomeFragment mContext;
+    private List<String> mPurchased;
 
-    public ProdcutsAdapter(List<SkuDetails> mProduct, HomeFragment mContext) {
+    public ProdcutsAdapter(List<SkuDetails> mProduct, HomeFragment mContext, List<String> purchased) {
         this.mProduct = mProduct;
         this.mContext = mContext;
+        this.mPurchased = purchased;
     }
 
     @NonNull
@@ -34,6 +36,9 @@ public class ProdcutsAdapter extends RecyclerView.Adapter<ProdcutsAdapter.Produc
 
     @Override
     public void onBindViewHolder(@NonNull ProductViewHolder holder, final int position) {
+        if (mPurchased.contains(mProduct.get(position).getSku())) {
+            holder.mTitleText.setTextColor(mContext.getResources().getColor(R.color.colorPrimaryDark));
+        }
         holder.mTitleText.setText(mProduct.get(position).getTitle());
         holder.mTitleText.setOnClickListener(new View.OnClickListener() {
             @Override
