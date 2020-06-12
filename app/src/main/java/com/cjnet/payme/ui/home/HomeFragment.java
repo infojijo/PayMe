@@ -181,6 +181,8 @@ public class HomeFragment extends Fragment implements
                 if (responseCode == BillingClient.BillingResponse.OK) {
                     Log.d(HomeFragment.class.getSimpleName(), "Billing Setup Success");
                     getPurchases();
+                    //refresh screen
+                    onLoadProductsClicked();
                 } else {
                     Log.d(HomeFragment.class.getSimpleName(), "Billing Setup FAILURE with ->" + responseCode);
                 }
